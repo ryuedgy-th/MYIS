@@ -4,10 +4,10 @@
         <!-- Email Template สำหรับ Payslip -->
         <record id="payslip_email_template" model="mail.template">
             <field name="name">MYIS Payslip Notification</field>
-            <field name="model_id" ref="hr_payroll.model_hr_payslip"/>
+            <field name="model_id" ref="hr_payroll_community.model_hr_payslip"/>
             <field name="subject">สลิปเงินเดือน ${object.date_from.strftime('%B %Y') if object.date_from else ''} - ${object.employee_id.name}</field>
             <field name="email_from">hr@myis.ac.th</field>
-            <field name="email_to">${object.employee_id.work_email or object.employee_id.user_id.email or ''}</field>
+            <field name="email_to">${object.employee_id.work_email or (object.employee_id.user_id.email if object.employee_id.user_id else '') or ''}</field>
             <field name="reply_to">hr@myis.ac.th</field>
             <field name="body_html" type="html">
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -24,10 +24,20 @@
         <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #6f42c1;">
             <h3 style="color: #6f42c1; margin-top: 0;">รายละเอียดสลิปเงินเดือน</h3>
             <p><strong>ชื่อ:</strong> ${object.employee_id.name}</p>
+            <p><strong>รหัสพนักงาน:</strong> ${object.employee_id.employee_id or 'ไม่ระบุ'}</p>
             <p><strong>ตำแหน่ง:</strong> ${object.employee_id.job_id.name or 'ไม่ระบุ'}</p>
             <p><strong>แผนก:</strong> ${object.employee_id.department_id.name or 'ไม่ระบุ'}</p>
             <p><strong>ระยะเวลา:</strong> ${object.date_from.strftime('%d/%m/%Y') if object.date_from else 'N/A'} - ${object.date_to.strftime('%d/%m/%Y') if object.date_to else 'N/A'}</p>
-            <p><strong>เงินเดือนสุทธิ:</strong> ${'{:,.2f}'.format(object.net_wage)} บาท</p>
+            <p><strong>เงินเดือนสุทธิ:</strong> ${'{:,.2f}'.format(float(object.net_wage)) if object.net_wage else '0.00'} บาท</p>
+            <p><strong>สถานะ:</strong> 
+                % if object.state == 'done':
+                    <span style="color: green;">อนุมัติแล้ว</span>
+                % elif object.state == 'verify':
+                    <span style="color: orange;">รอการตรวจสอบ</span>
+                % else:
+                    <span style="color: red;">ร่าง</span>
+                % endif
+            </p>
         </div>
 
         <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; border: 1px solid #ffeeba;">
@@ -35,9 +45,10 @@
             <ul style="color: #856404;">
                 <li>เงินเดือนพื้นฐานถูกต้องหรือไม่</li>
                 <li>จำนวนวันทำงาน และวันลา</li>
-                <li>การหักประกันสังคม (5%)</li>
+                <li>การหักประกันสังคม และภาษี</li>
                 <li>ค่าล่วงเวลา (ถ้ามี)</li>
-                <li>เบิกเงินล่วงหน้า (ถ้ามี)</li>
+                <li>เงินสำรองเลี้ยงชีพ (ถ้ามี)</li>
+                <li>รายการหักอื่นๆ (ถ้ามี)</li>
             </ul>
         </div>
 
@@ -54,7 +65,8 @@
 
         <p style="text-align: center; color: #6c757d; font-size: 14px;">
             สลิปเงินเดือนฉบับนี้จัดทำโดยระบบอัตโนมัติ<br/>
-            กรุณาเก็บไว้เป็นหลักฐานการรับเงินเดือน
+            กรุณาเก็บไว้เป็นหลักฐานการรับเงินเดือน<br/>
+            วันที่ส่ง: ${ctx['timestamp'].strftime('%d/%m/%Y %H:%M') if ctx.get('timestamp') else ''}
         </p>
     </div>
 
@@ -69,6 +81,7 @@
             </field>
             <field name="attachment_ids" eval="[(6, 0, [])]"/>
             <field name="auto_delete" eval="False"/>
+            <field name="report_template" eval="False"/>
         </record>
     </data>
 </odoo>
