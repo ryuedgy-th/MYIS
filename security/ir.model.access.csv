@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_payslip_email_wizard_payroll_manager,payslip.email.wizard payroll manager,model_payslip_email_wizard,hr_payroll.group_hr_payroll_manager,1,1,1,1
-access_payslip_email_wizard_payroll_officer,payslip.email.wizard payroll officer,model_payslip_email_wizard,hr_payroll.group_hr_payroll_user,1,1,1,1
+access_payslip_email_wizard_payroll_manager,payslip.email.wizard payroll manager,model_payslip_email_wizard,hr_payroll_community.group_hr_payroll_manager,1,1,1,1
+access_payslip_email_wizard_payroll_user,payslip.email.wizard payroll user,model_payslip_email_wizard,hr_payroll_community.group_hr_payroll_user,1,1,1,1
+access_payslip_email_wizard_hr_officer,payslip.email.wizard hr officer,model_payslip_email_wizard,hr.group_hr_user,1,1,1,0
