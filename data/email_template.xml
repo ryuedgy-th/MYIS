@@ -83,9 +83,7 @@
     </div>
 </div>
             </field>
-            <field name="attachment_ids" eval="[(6, 0, [])]"/>
             <field name="auto_delete" eval="False"/>
-            <field name="report_template" eval="False"/>
         </record>
     </data>
 </odoo>
