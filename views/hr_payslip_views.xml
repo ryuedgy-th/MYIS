@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- เพิ่มปุ่มส่ง Email ใน Payslip Form -->
+    <record id="view_hr_payslip_form_email" model="ir.ui.view">
+        <field name="name">hr.payslip.form.email</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_send_payslip_email"
+                        string="Send Email"
+                        type="object"
+                        class="btn-primary"
+                        attrs="{'invisible': [('state', '!=', 'done')]}"
+                        icon="fa-envelope"/>
+            </xpath>
+            <xpath expr="//field[@name='state']" position="after">
+                <field name="email_sent" readonly="1"/>
+                <field name="email_sent_date" readonly="1" attrs="{'invisible': [('email_sent', '=', False)]}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- เพิ่มคอลัมน์ Email Status ใน List View -->
+    <record id="view_hr_payslip_tree_email" model="ir.ui.view">
+        <field name="name">hr.payslip.tree.email</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state']" position="after">
+                <field name="email_sent" string="Email Sent" widget="boolean_toggle"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Action สำหรับส่ง Mass Email -->
+    <record id="action_mass_send_payslip_emails" model="ir.actions.server">
+        <field name="name">Send Payslip Emails</field>
+        <field name="model_id" ref="hr_payroll.model_hr_payslip"/>
+        <field name="binding_model_id" ref="hr_payroll.model_hr_payslip"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_mass_send_emails()</field>
+    </record>
+</odoo>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Wizard Form View -->
+    <record id="view_payslip_email_wizard_form" model="ir.ui.view">
+        <field name="name">payslip.email.wizard.form</field>
+        <field name="model">payslip.email.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Send Payslip Emails">
+                <group>
+                    <group>
+                        <field name="payslip_count" readonly="1" string="จำนวน Payslip ที่เลือก"/>
+                        <field name="email_template_id" required="1"/>
+                    </group>
+                    <group>
+                        <field name="only_confirmed"/>
+                        <field name="only_with_email"/>
+                    </group>
+                </group>
+
+                <notebook>
+                    <page string="Payslips" name="payslips">
+                        <field name="payslip_ids" readonly="1">
+                            <tree>
+                                <field name="employee_id"/>
+                                <field name="date_from"/>
+                                <field name="date_to"/>
+                                <field name="state"/>
+                                <field name="email_sent" widget="boolean_toggle"/>
+                            </tree>
+                        </field>
+                    </page>
+                </notebook>
+
+                <footer>
+                    <button name="action_send_emails"
+                            string="ส่ง Emails"
+                            type="object"
+                            class="btn-primary"/>
+                    <button string="ยกเลิก"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Wizard Action -->
+    <record id="action_payslip_email_wizard" model="ir.actions.act_window">
+        <field name="name">Send Payslip Emails</field>
+        <field name="res_model">payslip.email.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
