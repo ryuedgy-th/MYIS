@@ -6,28 +6,76 @@
         <field name="model">payslip.email.wizard</field>
         <field name="arch" type="xml">
             <form string="Send Payslip Emails">
+                <div class="alert alert-info" role="alert" style="margin-bottom: 16px;">
+                    <strong>การส่ง Email Payslip แบบหลายคน</strong><br/>
+                    <span>เลือกเงื่อนไขและกดส่ง Email เพื่อแจ้งพนักงานเกี่ยวกับสลิปเงินเดือน</span>
+                </div>
+
                 <group>
-                    <group>
-                        <field name="payslip_count" readonly="1" string="จำนวน Payslip ที่เลือก"/>
-                        <field name="email_template_id" required="1"/>
+                    <group string="สถิติ">
+                        <field name="filtered_count" string="ผ่านการกรอง" readonly="1"/>
+                        <field name="preview_count" string="จะส่ง Email" readonly="1" attrs="{'invisible': [('preview_count', '=', 0)]}"/>
                     </group>
+                    <group string="Email Template">
+                        <field name="email_template_id" required="1" options="{'no_create': True}"/>
+                    </group>
+                </group>
+
+                <group string="ตัวเลือกการกรอง">
                     <group>
                         <field name="only_confirmed"/>
                         <field name="only_with_email"/>
                     </group>
+                    <group>
+                        <field name="skip_already_sent"/>
+                    </group>
                 </group>
 
+                <div class="alert alert-warning" role="alert" style="margin: 16px 0;" attrs="{'invisible': [('preview_count', '>', 0)]}">
+                    <strong>⚠️ ไม่พบรายการที่จะส่ง Email</strong><br/>
+                    กรุณาตรวจสอบเงื่อนไขการกรอง หรือสถานะของ Payslip
+                </div>
+
                 <notebook>
-                    <page string="Payslips" name="payslips">
+                    <page string="Payslips to Send" name="payslips" attrs="{'invisible': [('payslip_count', '=', 0)]}">
                         <field name="payslip_ids" readonly="1">
-                            <tree>
+                            <tree decoration-success="not email_sent" decoration-muted="email_sent">
                                 <field name="employee_id"/>
                                 <field name="date_from"/>
                                 <field name="date_to"/>
-                                <field name="state"/>
+                                <field name="state" widget="badge"/>
+                                <field name="net_wage" sum="Total" widget="monetary"/>
                                 <field name="email_sent" widget="boolean_toggle"/>
+                                <field name="email_sent_date"/>
                             </tree>
                         </field>
+                    </page>
+                    
+                    <page string="Email Preview" name="preview">
+                        <div class="o_form_sheet">
+                            <div class="alert alert-info" role="alert">
+                                <h4>Template: <field name="email_template_id" readonly="1" nolabel="1" style="display: inline;"/></h4>
+                                <p>Email จะส่งไปยัง work_email หรือ user email ของพนักงาน</p>
+                            </div>
+                            
+                            <group>
+                                <group>
+                                    <label for="preview_count" string="จำนวนที่จะส่ง"/>
+                                    <div>
+                                        <field name="preview_count" readonly="1" class="text-primary" style="font-size: 18px; font-weight: bold;"/>
+                                        <span> รายการ</span>
+                                    </div>
+                                </group>
+                            </group>
+                            
+                            <div style="text-align: center; margin-top: 20px;">
+                                <button name="action_preview_recipients" 
+                                        string="ดูรายชื่อผู้รับ" 
+                                        type="object" 
+                                        class="btn-secondary"
+                                        attrs="{'invisible': [('preview_count', '=', 0)]}"/>
+                            </div>
+                        </div>
                     </page>
                 </notebook>
 
@@ -35,7 +83,9 @@
                     <button name="action_send_emails"
                             string="ส่ง Emails"
                             type="object"
-                            class="btn-primary"/>
+                            class="btn-primary"
+                            attrs="{'invisible': [('preview_count', '=', 0)]}"
+                            confirm="คุณต้องการส่ง Email ให้พนักงาน จำนวน %(preview_count)d คน ใช่หรือไม่?"/>
                     <button string="ยกเลิก"
                             class="btn-secondary"
                             special="cancel"/>
@@ -50,5 +100,7 @@
         <field name="res_model">payslip.email.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
+        <field name="view_id" ref="view_payslip_email_wizard_form"/>
     </record>
-</odoo>
+</odoo>d name="total_selected" string="เลือกทั้งหมด" readonly="1"/>
+                        <fiel
