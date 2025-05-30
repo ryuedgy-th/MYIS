@@ -10,6 +10,7 @@
             <field name="email_to">${object.employee_id.work_email or (object.employee_id.user_id.email if object.employee_id.user_id else '') or ''}</field>
             <field name="reply_to">hr@myis.ac.th</field>
             <field name="body_html" type="html">
+<![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
     <div style="background-color: #6f42c1; color: white; padding: 20px; text-align: center;">
         <h2 style="margin: 0;">MYIS International School</h2>
@@ -82,6 +83,7 @@
         </p>
     </div>
 </div>
+]]>
             </field>
             <field name="auto_delete" eval="False"/>
         </record>
