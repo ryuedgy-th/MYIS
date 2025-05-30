@@ -1,5 +1,5 @@
 from odoo import models, fields, api
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import UserError
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -8,86 +8,25 @@ class PayslipEmailWizard(models.TransientModel):
     _name = 'payslip.email.wizard'
     _description = 'Payslip Email Wizard'
 
-    payslip_ids = fields.Many2many(
-        'hr.payslip', 
-        string='Payslips',
-        help="Payslips to send emails for"
-    )
-    payslip_count = fields.Integer(
-        string='Payslip Count',
-        help="Number of payslips ready to send"
-    )
-    total_selected = fields.Integer(
-        string='Total Selected',
-        help="Total number of payslips originally selected"
-    )
-    filtered_count = fields.Integer(
-        string='Filtered Count',
-        help="Number of payslips after filtering"
-    )
+    payslip_ids = fields.Many2many('hr.payslip', string='Payslips')
+    payslip_count = fields.Integer(string='Payslip Count')
     
-    email_template_id = fields.Many2one(
-        'mail.template',
-        string='Email Template',
-        domain=[('model', '=', 'hr.payslip')],
-        required=True,
-        help="Email template to use for sending payslip emails"
-    )
-    
-    # Filter options
-    only_confirmed = fields.Boolean(
-        string='เฉพาะ Payslip ที่ Confirm แล้ว', 
-        default=True,
-        help="Only include confirmed payslips (state = done or paid)"
-    )
-    only_with_email = fields.Boolean(
-        string='เฉพาะพนักงานที่มี Email', 
-        default=True,
-        help="Only include employees with valid email addresses"
-    )
-    skip_already_sent = fields.Boolean(
-        string='ข้าม Payslip ที่ส่งแล้ว',
-        default=True,
-        help="Skip payslips that have already been sent"
-    )
-    
-    # Summary fields
-    preview_count = fields.Integer(
-        string='จำนวนที่จะส่ง',
-        compute='_compute_preview_count',
-        help="Number of emails that will be sent based on current filters"
-    )
-    
+    # Simple options
+    only_confirmed = fields.Boolean(string='เฉพาะ Payslip ที่ Confirm แล้ว', default=True)
+    only_with_email = fields.Boolean(string='เฉพาะพนักงานที่มี Email', default=True)
+    skip_already_sent = fields.Boolean(string='ข้าม Payslip ที่ส่งแล้ว', default=True)
+
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
-        
-        # Get payslips from context
         active_ids = self.env.context.get('active_ids', [])
         if active_ids:
             res['payslip_ids'] = [(6, 0, active_ids)]
             res['payslip_count'] = len(active_ids)
-            res['total_selected'] = self.env.context.get('default_total_selected', len(active_ids))
-            res['filtered_count'] = self.env.context.get('default_filtered_count', len(active_ids))
-        
-        # Set default template
-        template = self.env.ref(
-            'myis_payslip_email.payslip_email_template', 
-            raise_if_not_found=False
-        )
-        if template:
-            res['email_template_id'] = template.id
-            
         return res
 
-    @api.depends('payslip_ids', 'only_confirmed', 'only_with_email', 'skip_already_sent')
-    def _compute_preview_count(self):
-        for wizard in self:
-            payslips = wizard._get_filtered_payslips()
-            wizard.preview_count = len(payslips)
-
-    def _get_filtered_payslips(self):
-        """ดึง payslips ที่ผ่านการกรองตามเงื่อนไข"""
+    def action_send_emails(self):
+        """ส่ง email ให้ payslips ที่เลือก"""
         payslips = self.payslip_ids
 
         # กรอง payslips ตามเงื่อนไข
@@ -103,70 +42,15 @@ class PayslipEmailWizard(models.TransientModel):
         if self.skip_already_sent:
             payslips = payslips.filtered(lambda p: not p.email_sent)
 
-        return payslips
-
-    def action_preview_recipients(self):
-        """แสดงรายชื่อผู้รับที่จะได้รับ email"""
-        payslips = self._get_filtered_payslips()
-        
         if not payslips:
             raise UserError('ไม่พบ Payslip ที่ตรงตามเงื่อนไข')
-        
-        # สร้าง list view แสดงรายชื่อ
-        action = {
-            'name': f'ผู้รับ Email ({len(payslips)} รายการ)',
-            'type': 'ir.actions.act_window',
-            'res_model': 'hr.payslip',
-            'view_mode': 'tree',
-            'target': 'new',
-            'domain': [('id', 'in', payslips.ids)],
-            'context': {'create': False, 'edit': False, 'delete': False}
-        }
-        return action
 
-    @api.model
-    def _validate_email_template(self, template_id):
-        """ตรวจสอบ email template"""
-        if not template_id:
-            raise UserError('กรุณาเลือก Email Template')
-        
-        template = self.env['mail.template'].browse(template_id)
-        if not template.exists():
-            raise UserError('ไม่พบ Email Template ที่เลือก')
-        
-        if template.model != 'hr.payslip':
-            raise UserError('Email Template ต้องเป็นสำหรับ model hr.payslip เท่านั้น')
-            
-        return template
-
-    def action_send_emails(self):
-        """ส่ง email ให้ payslips ที่เลือก"""
-        # Validate template
-        template = self._validate_email_template(self.email_template_id.id)
-        
-        # Get filtered payslips
-        payslips = self._get_filtered_payslips()
-        
-        if not payslips:
-            raise UserError(
-                'ไม่พบ Payslip ที่ตรงตามเงื่อนไข\n\n'
-                'กรุณาตรวจสอบ:\n'
-                '- Payslip ต้องอยู่ในสถานะ "Done" หรือ "Paid"\n'
-                '- พนักงานต้องมี email address\n'
-                '- ยังไม่เคยส่ง email (ถ้าเลือกข้าม Payslip ที่ส่งแล้ว)'
-            )
-
-        # Send emails
         success_count = 0
         error_count = 0
-        error_details = []
-        
-        total_payslips = len(payslips)
-        _logger.info(f'Starting to send {total_payslips} payslip emails')
+        error_messages = []
 
-        for i, payslip in enumerate(payslips, 1):
+        for payslip in payslips:
             try:
-                # Get employee email
                 employee_email = (
                     payslip.employee_id.work_email or 
                     (payslip.employee_id.user_id.email if payslip.employee_id.user_id else '')
@@ -174,73 +58,54 @@ class PayslipEmailWizard(models.TransientModel):
                 
                 if not employee_email:
                     raise Exception('ไม่พบ email address')
+
+                # ส่ง email แบบง่าย ๆ
+                mail_values = {
+                    'subject': f'สลิปเงินเดือน - {payslip.employee_id.name}',
+                    'email_from': 'hr@myis.ac.th',
+                    'email_to': employee_email,
+                    'body_html': f'''
+                    <div style="font-family: Arial, sans-serif; padding: 20px;">
+                        <h2>MYIS International School</h2>
+                        <p>เรียน {payslip.employee_id.name},</p>
+                        <p>สลิปเงินเดือนของท่านได้จัดทำเสร็จเรียบร้อยแล้ว</p>
+                        <p><strong>ตำแหน่ง:</strong> {payslip.employee_id.job_id.name or 'ไม่ระบุ'}</p>
+                        <p><strong>แผนก:</strong> {payslip.employee_id.department_id.name or 'ไม่ระบุ'}</p>
+                        <p>กรุณาตรวจสอบข้อมูลและแจ้งกลับหากพบข้อผิดพลาด</p>
+                        <p>ขอบคุณครับ/ค่ะ<br/>HR Department</p>
+                    </div>
+                    ''',
+                }
                 
-                # Send email with context
-                template.with_context(
-                    timestamp=fields.Datetime.now(),
-                    payslip_id=payslip.id
-                ).send_mail(payslip.id, force_send=True)
+                mail = self.env['mail.mail'].create(mail_values)
+                mail.send()
                 
-                # Update payslip status
+                # อัพเดทสถานะ
                 payslip.write({
                     'email_sent': True,
                     'email_sent_date': fields.Datetime.now(),
                     'email_sent_by': self.env.user.id
                 })
                 
-                # Log success
-                payslip.message_post(
-                    body=f'Payslip email sent to {employee_email} via wizard',
-                    subject='Payslip Email Sent (Batch)',
-                    message_type='notification'
-                )
-                
                 success_count += 1
-                _logger.info(
-                    f'[{i}/{total_payslips}] Email sent to {payslip.employee_id.name} '
-                    f'({employee_email})'
-                )
+                _logger.info(f'Email sent to {payslip.employee_id.name} ({employee_email})')
 
             except Exception as e:
                 error_count += 1
                 error_msg = f'{payslip.employee_id.name}: {str(e)}'
-                error_details.append(error_msg)
-                _logger.error(
-                    f'[{i}/{total_payslips}] Failed to send email to '
-                    f'{payslip.employee_id.name}: {str(e)}'
-                )
+                error_messages.append(error_msg)
+                _logger.error(f'Failed to send email to {payslip.employee_id.name}: {str(e)}')
 
-        # Prepare result message
-        message_lines = []
-        message_lines.append(f'📊 สรุปการส่ง Email:')
-        message_lines.append(f'✅ สำเร็จ: {success_count} รายการ')
-        
+        # แสดงผลลัพธ์
+        message = f'ส่ง Email เสร็จสิ้น:\n✅ สำเร็จ: {success_count} รายการ'
         if error_count > 0:
-            message_lines.append(f'❌ ไม่สำเร็จ: {error_count} รายการ')
-            message_lines.append('')
-            message_lines.append('🔍 รายละเอียด Error:')
-            
-            # Show first 5 errors
-            for error in error_details[:5]:
-                message_lines.append(f'• {error}')
-            
-            if len(error_details) > 5:
-                message_lines.append(f'• ... และอีก {len(error_details) - 5} รายการ')
+            message += f'\n❌ ไม่สำเร็จ: {error_count} รายการ'
 
-        message = '\n'.join(message_lines)
-        
-        # Log summary
-        _logger.info(
-            f'Payslip email batch completed: {success_count} success, '
-            f'{error_count} errors out of {total_payslips} total'
-        )
-
-        # Return notification
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': 'ผลการส่ง Email Payslip',
+                'title': 'ผลการส่ง Email',
                 'message': message,
                 'type': 'success' if error_count == 0 else 'warning',
                 'sticky': True,
