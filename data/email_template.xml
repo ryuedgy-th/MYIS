@@ -4,7 +4,7 @@
         <!-- Email Template สำหรับ Payslip -->
         <record id="payslip_email_template" model="mail.template">
             <field name="name">MYIS Payslip Notification</field>
-            <field name="model_id" ref="hr_payroll_community.model_hr_payslip"/>
+            <field name="model">hr.payslip</field>
             <field name="subject">สลิปเงินเดือน ${object.date_from.strftime('%B %Y') if object.date_from else ''} - ${object.employee_id.name}</field>
             <field name="email_from">hr@myis.ac.th</field>
             <field name="email_to">${object.employee_id.work_email or (object.employee_id.user_id.email if object.employee_id.user_id else '') or ''}</field>
@@ -28,7 +28,11 @@
             <p><strong>ตำแหน่ง:</strong> ${object.employee_id.job_id.name or 'ไม่ระบุ'}</p>
             <p><strong>แผนก:</strong> ${object.employee_id.department_id.name or 'ไม่ระบุ'}</p>
             <p><strong>ระยะเวลา:</strong> ${object.date_from.strftime('%d/%m/%Y') if object.date_from else 'N/A'} - ${object.date_to.strftime('%d/%m/%Y') if object.date_to else 'N/A'}</p>
-            <p><strong>เงินเดือนสุทธิ:</strong> ${'{:,.2f}'.format(float(object.net_wage)) if object.net_wage else '0.00'} บาท</p>
+            
+            % if hasattr(object, 'net_wage'):
+                <p><strong>เงินเดือนสุทธิ:</strong> ${'{:,.2f}'.format(float(object.net_wage)) if object.net_wage else '0.00'} บาท</p>
+            % endif
+            
             <p><strong>สถานะ:</strong> 
                 % if object.state == 'done':
                     <span style="color: green;">อนุมัติแล้ว</span>
