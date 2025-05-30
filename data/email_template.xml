@@ -1,91 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
-        <!-- Email Template สำหรับ Payslip -->
-        <record id="payslip_email_template" model="mail.template">
-            <field name="name">MYIS Payslip Notification</field>
-            <field name="model">hr.payslip</field>
-            <field name="subject">สลิปเงินเดือน ${object.date_from.strftime('%B %Y') if object.date_from else ''} - ${object.employee_id.name}</field>
-            <field name="email_from">hr@myis.ac.th</field>
-            <field name="email_to">${object.employee_id.work_email or (object.employee_id.user_id.email if object.employee_id.user_id else '') or ''}</field>
-            <field name="reply_to">hr@myis.ac.th</field>
-            <field name="body_html" type="html">
-<![CDATA[
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-    <div style="background-color: #6f42c1; color: white; padding: 20px; text-align: center;">
-        <h2 style="margin: 0;">MYIS International School</h2>
-        <p style="margin: 5px 0;">แจ้งสลิปเงินเดือน</p>
-    </div>
+<data noupdate="1">
 
-    <div style="padding: 20px; background-color: #f8f9fa;">
-        <p><strong>เรียน ${object.employee_id.name},</strong></p>
+<record id="payslip_email_template" model="mail.template">
+    <field name="name">MYIS Payslip Notification</field>
+    <field name="model">hr.payslip</field>
+    <field name="subject">สลิปเงินเดือน - ${object.employee_id.name}</field>
+    <field name="email_from">hr@myis.ac.th</field>
+    <field name="email_to">${object.employee_id.work_email or object.employee_id.user_id.email}</field>
+    <field name="body_html">
+&lt;div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"&gt;
+    &lt;div style="background-color: #6f42c1; color: white; padding: 20px; text-align: center;"&gt;
+        &lt;h2 style="margin: 0;"&gt;MYIS International School&lt;/h2&gt;
+        &lt;p style="margin: 5px 0;"&gt;แจ้งสลิปเงินเดือน&lt;/p&gt;
+    &lt;/div&gt;
 
-        <p>สลิปเงินเดือนประจำเดือน <strong>${object.date_from.strftime('%B %Y') if object.date_from else 'N/A'}</strong> ได้จัดทำเสร็จเรียบร้อยแล้ว</p>
+    &lt;div style="padding: 20px; background-color: #f8f9fa;"&gt;
+        &lt;p&gt;&lt;strong&gt;เรียน ${object.employee_id.name},&lt;/strong&gt;&lt;/p&gt;
+        &lt;p&gt;สลิปเงินเดือนของท่านได้จัดทำเสร็จเรียบร้อยแล้ว&lt;/p&gt;
 
-        <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #6f42c1;">
-            <h3 style="color: #6f42c1; margin-top: 0;">รายละเอียดสลิปเงินเดือน</h3>
-            <p><strong>ชื่อ:</strong> ${object.employee_id.name}</p>
-            <p><strong>รหัสพนักงาน:</strong> ${object.employee_id.employee_id or 'ไม่ระบุ'}</p>
-            <p><strong>ตำแหน่ง:</strong> ${object.employee_id.job_id.name or 'ไม่ระบุ'}</p>
-            <p><strong>แผนก:</strong> ${object.employee_id.department_id.name or 'ไม่ระบุ'}</p>
-            <p><strong>ระยะเวลา:</strong> ${object.date_from.strftime('%d/%m/%Y') if object.date_from else 'N/A'} - ${object.date_to.strftime('%d/%m/%Y') if object.date_to else 'N/A'}</p>
-            
-            % if hasattr(object, 'net_wage'):
-                <p><strong>เงินเดือนสุทธิ:</strong> ${'{:,.2f}'.format(float(object.net_wage)) if object.net_wage else '0.00'} บาท</p>
-            % endif
-            
-            <p><strong>สถานะ:</strong> 
-                % if object.state == 'done':
-                    <span style="color: green;">อนุมัติแล้ว</span>
-                % elif object.state == 'verify':
-                    <span style="color: orange;">รอการตรวจสอบ</span>
-                % else:
-                    <span style="color: red;">ร่าง</span>
-                % endif
-            </p>
-        </div>
+        &lt;div style="background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0;"&gt;
+            &lt;h3 style="color: #6f42c1;"&gt;รายละเอียด&lt;/h3&gt;
+            &lt;p&gt;&lt;strong&gt;ชื่อ:&lt;/strong&gt; ${object.employee_id.name}&lt;/p&gt;
+            &lt;p&gt;&lt;strong&gt;ตำแหน่ง:&lt;/strong&gt; ${object.employee_id.job_id.name or 'ไม่ระบุ'}&lt;/p&gt;
+            &lt;p&gt;&lt;strong&gt;แผนก:&lt;/strong&gt; ${object.employee_id.department_id.name or 'ไม่ระบุ'}&lt;/p&gt;
+        &lt;/div&gt;
 
-        <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; border: 1px solid #ffeeba;">
-            <h4 style="color: #856404; margin-top: 0;">กรุณาตรวจสอบข้อมูลต่อไปนี้:</h4>
-            <ul style="color: #856404;">
-                <li>เงินเดือนพื้นฐานถูกต้องหรือไม่</li>
-                <li>จำนวนวันทำงาน และวันลา</li>
-                <li>การหักประกันสังคม และภาษี</li>
-                <li>ค่าล่วงเวลา (ถ้ามี)</li>
-                <li>เงินสำรองเลี้ยงชีพ (ถ้ามี)</li>
-                <li>รายการหักอื่นๆ (ถ้ามี)</li>
-            </ul>
-        </div>
+        &lt;p style="text-align: center; color: #6c757d;"&gt;
+            กรุณาตรวจสอบข้อมูลและแจ้งกลับหากพบข้อผิดพลาด&lt;br/&gt;
+            &lt;strong&gt;Email:&lt;/strong&gt; hr@myis.ac.th
+        &lt;/p&gt;
+    &lt;/div&gt;
 
-        <div style="background-color: #d1ecf1; padding: 15px; border-radius: 5px; margin: 15px 0; border: 1px solid #bee5eb;">
-            <h4 style="color: #0c5460; margin-top: 0;">หากพบข้อผิดพลาด</h4>
-            <p style="color: #0c5460;">กรุณาแจ้งกลับมาภายใน <strong>3 วันทำการ</strong> ผ่านช่องทางดังนี้:</p>
-            <ul style="color: #0c5460;">
-                <li><strong>Email:</strong> hr@myis.ac.th</li>
-                <li><strong>Line:</strong> @myis_hr</li>
-                <li><strong>โทรศัพท์:</strong> 02-xxx-xxxx ต่อ 101</li>
-                <li><strong>ติดต่อ HR โดยตรง:</strong> อาคาร A ชั้น 1</li>
-            </ul>
-        </div>
-
-        <p style="text-align: center; color: #6c757d; font-size: 14px;">
-            สลิปเงินเดือนฉบับนี้จัดทำโดยระบบอัตโนมัติ<br/>
-            กรุณาเก็บไว้เป็นหลักฐานการรับเงินเดือน<br/>
-            วันที่ส่ง: ${ctx['timestamp'].strftime('%d/%m/%Y %H:%M') if ctx.get('timestamp') else ''}
-        </p>
-    </div>
-
-    <div style="background-color: #6f42c1; color: white; padding: 15px; text-align: center;">
-        <p style="margin: 0;">
-            ขอบคุณครับ/ค่ะ<br/>
-            <strong>HR Department</strong><br/>
+    &lt;div style="background-color: #6f42c1; color: white; padding: 15px; text-align: center;"&gt;
+        &lt;p style="margin: 0;"&gt;
+            ขอบคุณครับ/ค่ะ&lt;br/&gt;
+            &lt;strong&gt;HR Department&lt;/strong&gt;&lt;br/&gt;
             MYIS International School
-        </p>
-    </div>
-</div>
-]]>
-            </field>
-            <field name="auto_delete" eval="False"/>
-        </record>
-    </data>
+        &lt;/p&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+    </field>
+</record>
+
+</data>
 </odoo>
