@@ -25,7 +25,7 @@ Custom Odoo 18 module for MYIS International School to send payslip emails to em
 1. **Download/Clone the module:**
    ```bash
    cd /path/to/odoo/addons/
-   git clone https://github.com/YOUR_USERNAME/myis_payslip_email.git
+   git clone https://github.com/ryuedgy-th/MYIS.git
    ```
 
 2. **Restart Odoo server:**
