@@ -5,7 +5,7 @@
     'description': """
         Custom module for MYIS International School
         - Send payslip emails to multiple employees
-        - Compatible with hr_payroll_community (Community Edition)
+        - Compatible with standard Odoo HR Payroll
         - Custom email templates
         - Mass email functionality
         - Email tracking and status
@@ -14,9 +14,8 @@
     'website': 'https://myis.ac.th',
     'category': 'Human Resources',
     'depends': [
-        'hr_payroll_community',  # ใช้ community edition
-        'mail',
-        'hr',  # เพิ่ม hr dependency
+        'hr',           # HR base module
+        'mail',         # Mail functionality
     ],
     'data': [
         'security/ir.model.access.csv',
@@ -28,5 +27,5 @@
     'installable': True,
     'auto_install': False,
     'application': False,
-    'license': 'LGPL-3',  # เพิ่ม license
+    'license': 'LGPL-3',
 }
