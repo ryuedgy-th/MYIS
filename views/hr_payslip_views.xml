@@ -4,19 +4,42 @@
     <record id="view_hr_payslip_form_email" model="ir.ui.view">
         <field name="name">hr.payslip.form.email</field>
         <field name="model">hr.payslip</field>
-        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
+        <field name="inherit_id" ref="hr_payroll_community.view_hr_payslip_form"/>
         <field name="arch" type="xml">
+            <!-- เพิ่มปุ่มใน header -->
             <xpath expr="//header" position="inside">
                 <button name="action_send_payslip_email"
                         string="Send Email"
                         type="object"
                         class="btn-primary"
-                        attrs="{'invisible': [('state', '!=', 'done')]}"
-                        icon="fa-envelope"/>
+                        attrs="{'invisible': ['|', ('state', 'not in', ['done', 'paid']), ('email_sent', '=', True)]}"
+                        icon="fa-envelope"
+                        help="Send payslip email to employee"/>
+                        
+                <button name="action_send_payslip_email"
+                        string="Resend Email"
+                        type="object"
+                        class="btn-secondary"
+                        attrs="{'invisible': ['|', ('state', 'not in', ['done', 'paid']), ('email_sent', '=', False)]}"
+                        icon="fa-envelope"
+                        help="Resend payslip email to employee"/>
+                        
+                <button name="action_reset_email_status"
+                        string="Reset Email Status"
+                        type="object"
+                        class="btn-link"
+                        attrs="{'invisible': [('email_sent', '=', False)]}"
+                        groups="hr_payroll_community.group_hr_payroll_manager"
+                        help="Reset email status (Manager only)"/>
             </xpath>
+            
+            <!-- เพิ่ม fields หลัง state -->
             <xpath expr="//field[@name='state']" position="after">
-                <field name="email_sent" readonly="1"/>
-                <field name="email_sent_date" readonly="1" attrs="{'invisible': [('email_sent', '=', False)]}"/>
+                <field name="email_sent" readonly="1" widget="boolean_toggle"/>
+                <field name="email_sent_date" readonly="1" 
+                       attrs="{'invisible': [('email_sent', '=', False)]}"/>
+                <field name="email_sent_by" readonly="1" 
+                       attrs="{'invisible': [('email_sent', '=', False)]}"/>
             </xpath>
         </field>
     </record>
@@ -25,10 +48,12 @@
     <record id="view_hr_payslip_tree_email" model="ir.ui.view">
         <field name="name">hr.payslip.tree.email</field>
         <field name="model">hr.payslip</field>
-        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_tree"/>
+        <field name="inherit_id" ref="hr_payroll_community.view_hr_payslip_tree"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='state']" position="after">
-                <field name="email_sent" string="Email Sent" widget="boolean_toggle"/>
+                <field name="email_sent" string="Email Sent" widget="boolean_toggle" 
+                       optional="show"/>
+                <field name="email_sent_date" string="Email Date" optional="hide"/>
             </xpath>
         </field>
     </record>
@@ -36,10 +61,34 @@
     <!-- Action สำหรับส่ง Mass Email -->
     <record id="action_mass_send_payslip_emails" model="ir.actions.server">
         <field name="name">Send Payslip Emails</field>
-        <field name="model_id" ref="hr_payroll.model_hr_payslip"/>
-        <field name="binding_model_id" ref="hr_payroll.model_hr_payslip"/>
+        <field name="model_id" ref="hr_payroll_community.model_hr_payslip"/>
+        <field name="binding_model_id" ref="hr_payroll_community.model_hr_payslip"/>
         <field name="binding_view_types">list</field>
         <field name="state">code</field>
         <field name="code">action = records.action_mass_send_emails()</field>
+        <field name="groups_id" eval="[(4, ref('hr_payroll_community.group_hr_payroll_user'))]"/>
+    </record>
+
+    <!-- เพิ่ม Search Filter -->
+    <record id="view_hr_payslip_search_email" model="ir.ui.view">
+        <field name="name">hr.payslip.search.email</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll_community.view_hr_payslip_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='draft']" position="after">
+                <separator/>
+                <filter string="Email Sent" name="email_sent" 
+                        domain="[('email_sent', '=', True)]"/>
+                <filter string="Email Not Sent" name="email_not_sent" 
+                        domain="[('email_sent', '=', False)]"/>
+                <filter string="Ready to Send Email" name="ready_to_send" 
+                        domain="[('state', 'in', ['done', 'paid']), ('email_sent', '=', False)]"/>
+            </xpath>
+            
+            <xpath expr="//group[@name='groupby']" position="inside">
+                <filter string="Email Status" name="group_email_sent" 
+                        context="{'group_by': 'email_sent'}"/>
+            </xpath>
+        </field>
     </record>
 </odoo>
